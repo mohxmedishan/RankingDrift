@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift – rank anything</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#070618; --deep:#0d0b2b; --glass:rgba(255,255,255,.05); --line:rgba(190,175,255,.16);
+  --text:#eeeaff; --dim:#9a94c4; --lilac:#b9a7ff; --aqua:#6ee7f9; --rose:#ff9ad5;
+  --r:22px;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--void);color:var(--text);font:300 15px/1.6 Sora,system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+h1,h2,h3,.serif{font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:-.01em}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+
+/* ambient layer */
+#sky{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:float 18s ease-in-out infinite}
+.o1{width:46vmax;height:46vmax;background:#4b2fd6;top:-18vmax;left:-12vmax}
+.o2{width:38vmax;height:38vmax;background:#0e8fb0;bottom:-16vmax;right:-10vmax;animation-delay:-6s;opacity:.38}
+.o3{width:26vmax;height:26vmax;background:#c2399a;top:35%;left:55%;animation-delay:-11s;opacity:.25}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vmax,-5vmax) scale(1.1)}}
+#cursor{position:fixed;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;z-index:0;pointer-events:none;
+  background:radial-gradient(circle,rgba(150,130,255,.16),transparent 65%);transition:transform .25s ease-out}
+canvas#dust{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* layout */
+.app{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px 90px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.logo{font-family:"Instrument Serif";font-size:30px;display:flex;align-items:center;gap:10px}
+.logo i{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--lilac) 40%,var(--aqua));box-shadow:0 0 18px var(--lilac),0 0 42px rgba(110,231,249,.5);animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{50%{transform:translateY(-3px);box-shadow:0 0 26px var(--lilac),0 0 60px rgba(110,231,249,.7)}}
+.btn{padding:11px 22px;border-radius:99px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);transition:.3s}
+.btn:hover{border-color:var(--lilac);box-shadow:0 0 24px rgba(185,167,255,.3);transform:translateY(-2px)}
+.btn.glow{background:linear-gradient(120deg,#7c5cff,#3ec6ea);border:0;font-weight:600;color:#07061a;box-shadow:0 8px 30px rgba(124,92,255,.4)}
+.btn.glow:hover{box-shadow:0 10px 44px rgba(110,231,249,.55)}
+.me{display:flex;align-items:center;gap:12px}
+.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--lilac),var(--rose));display:grid;place-items:center;color:#07061a;font-weight:600;overflow:hidden;box-shadow:0 0 18px rgba(255,154,213,.4)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;min-height:68vh;padding:30px 0}
+.hero h1{font-size:clamp(46px,7.4vw,92px);line-height:.98}
+.hero h1 em{color:var(--lilac);text-shadow:0 0 40px rgba(185,167,255,.55)}
+.hero p{color:var(--dim);max-width:44ch;margin:22px 0 32px;font-size:17px}
+.stack{position:relative;height:420px;perspective:900px}
+.chip{position:absolute;display:flex;align-items:center;gap:14px;padding:16px 22px;border-radius:18px;border:1px solid var(--line);
+  background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.02));backdrop-filter:blur(14px);
+  box-shadow:0 20px 50px rgba(0,0,0,.4);animation:float 9s ease-in-out infinite;transition:.4s;cursor:grab}
+.chip:hover{border-color:var(--aqua);box-shadow:0 0 40px rgba(110,231,249,.35)}
+.chip b{font:400 30px "Instrument Serif";color:var(--aqua);text-shadow:0 0 16px var(--aqua)}
+
+/* home */
+.greet h2{font-size:clamp(34px,5vw,56px)}
+.greet p{color:var(--dim)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:28px 0 24px;align-items:center}
+.pill{padding:8px 18px;border-radius:99px;border:1px solid var(--line);color:var(--dim);transition:.25s}
+.pill:hover{color:var(--text);border-color:var(--lilac)}
+.pill.on{color:#07061a;background:var(--lilac);border-color:var(--lilac);box-shadow:0 0 22px rgba(185,167,255,.5)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
+.card{position:relative;border-radius:var(--r);border:1px solid var(--line);padding:20px;min-height:250px;display:flex;flex-direction:column;
+  background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015));backdrop-filter:blur(14px);
+  transform-style:preserve-3d;transition:transform .2s ease-out,border-color .3s,box-shadow .3s;text-align:left;overflow:hidden}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(260px circle at var(--mx,50%) var(--my,0%),rgba(150,130,255,.22),transparent 60%);opacity:0;transition:.3s}
+.card:hover{border-color:rgba(185,167,255,.5);box-shadow:0 20px 60px rgba(90,60,220,.28)}
+.card:hover::before{opacity:1}
+.card>*{position:relative}
+.tag{font-size:12px;color:var(--aqua)}
+.card h3{font-size:26px;line-height:1.1;margin:6px 0 4px}
+.card .by{font-size:12px;color:var(--dim)}
+.prev{margin-top:auto;display:grid;gap:6px;padding-top:16px}
+.row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);height:22px}
+.row span.n{width:18px;color:var(--lilac)}
+.row span.l{height:6px;border-radius:9px;background:linear-gradient(90deg,var(--lilac),transparent)}
+.tier{display:flex;gap:6px;align-items:center;height:22px}
+.tier b{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;color:#07061a;font-weight:600}
+.tier i{flex:1;height:6px;border-radius:9px;background:rgba(255,255,255,.1)}
+.like{position:absolute;top:16px;right:16px;font-size:18px;transition:.25s;filter:grayscale(1) opacity(.6)}
+.like.on{filter:none;transform:scale(1.2);text-shadow:0 0 16px var(--rose)}
+.new{border-style:dashed;align-items:center;justify-content:center;gap:12px;color:var(--dim)}
+.new .plus{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:30px;color:var(--aqua);border:1px solid var(--aqua);box-shadow:0 0 30px rgba(110,231,249,.3),inset 0 0 20px rgba(110,231,249,.15);animation:pulse 4s ease-in-out infinite}
+
+/* modal */
+.veil{position:fixed;inset:0;z-index:20;background:rgba(5,4,18,.7);backdrop-filter:blur(8px);display:none;place-items:center;padding:20px}
+.veil.show{display:grid}
+.modal{width:100%;max-width:410px;border-radius:28px;padding:34px 30px;border:1px solid var(--line);
+  background:linear-gradient(160deg,rgba(40,32,100,.55),rgba(12,10,40,.9));box-shadow:0 0 90px rgba(124,92,255,.3);animation:rise .5s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.96)}}
+.modal h2{font-size:40px;text-align:center}
+.modal .sub{text-align:center;color:var(--dim);margin-bottom:22px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.05);border-radius:99px;padding:4px;margin-bottom:18px}
+.tabs button{padding:9px;border-radius:99px;color:var(--dim);transition:.3s}
+.tabs button.on{background:rgba(185,167,255,.22);color:var(--text);box-shadow:0 0 18px rgba(185,167,255,.3)}
+input{width:100%;padding:14px 18px;margin-bottom:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font:inherit;transition:.3s}
+input:focus{outline:0;border-color:var(--aqua);box-shadow:0 0 22px rgba(110,231,249,.25)}
+.modal .btn{width:100%;margin-top:4px}
+.or{text-align:center;color:var(--dim);font-size:12px;margin:14px 0}
+.err{color:#ff8fa8;font-size:13px;min-height:20px;margin-bottom:6px}
+.x{position:absolute;top:14px;right:18px;font-size:22px;color:var(--dim)}
+.toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,40px);opacity:0;z-index:30;padding:12px 22px;border-radius:99px;
+  background:rgba(20,16,60,.9);border:1px solid var(--lilac);box-shadow:0 0 30px rgba(185,167,255,.35);transition:.4s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.hide{display:none!important}
+.demo{font-size:11px;color:var(--rose);text-align:center;margin-top:12px}
+
+@media(max-width:820px){.hero{grid-template-columns:1fr;min-height:0}.stack{height:340px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="sky"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+<div id="cursor"></div>
+<canvas id="dust"></canvas>
+
+<div class="app">
+  <nav>
+    <div class="logo"><i></i>Drift</div>
+    <div id="navOut"><button class="btn" data-open>Sign in</button></div>
+    <div id="navIn" class="me hide">
+      <button class="btn glow" id="newBtn">New board</button>
+      <button class="avatar" id="avatar" title="Sign out" aria-label="Account"></button>
+    </div>
+  </nav>
+
+  <!-- signed out -->
+  <section id="landing" class="hero">
+    <div>
+      <h1>Rank <em>everything</em> you love.</h1>
+      <p>Build boards for anything. Numbered lists, tier lists, and more. Save them to your account and share them with the world.</p>
+      <button class="btn glow" data-open>Start ranking</button>
+    </div>
+    <div class="stack" id="stack">
+      <div class="chip" style="top:6%;left:8%"><b>S</b>Midnight snacks</div>
+      <div class="chip" style="top:30%;right:0;animation-delay:-3s"><b>#1</b>Rainy-day albums</div>
+      <div class="chip" style="top:56%;left:0;animation-delay:-6s"><b>A</b>Open-world games</div>
+      <div class="chip" style="top:80%;right:12%;animation-delay:-2s"><b>#3</b>Pizza toppings</div>
+    </div>
+  </section>
+
+  <!-- signed in -->
+  <section id="home" class="hide">
+    <div class="greet"><h2 id="hello"></h2><p>Pick up where you left off or find something to rank.</p></div>
+    <div class="bar" id="filters"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<div class="veil" id="veil">
+  <div class="modal" style="position:relative" role="dialog" aria-modal="true" aria-label="Sign in">
+    <button class="x" id="close" aria-label="Close">×</button>
+    <h2 id="mTitle">Welcome back</h2>
+    <p class="sub" id="mSub">Sign in to see your boards.</p>
+    <div class="tabs"><button class="on" data-tab="in">Sign in</button><button data-tab="up">Create account</button></div>
+    <input id="name" placeholder="Display name" autocomplete="nickname" class="hide">
+    <input id="email" type="email" placeholder="Email" autocomplete="email">
+    <input id="pass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn glow" id="submit">Sign in</button>
+    <div class="or">or</div>
+    <button class="btn" id="google">Continue with Google</button>
+    <div class="demo hide" id="demo">Demo mode: add your Firebase config to go live.</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signInWithPopup, GoogleAuthProvider, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* 1. PASTE YOUR FIREBASE CONFIG HERE */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  appId: "YOUR_APP_ID"
+};
+
+const DEMO = firebaseConfig.apiKey === "YOUR_API_KEY";
+const $ = s => document.querySelector(s);
+const auth = DEMO ? null : getAuth(initializeApp(firebaseConfig));
+let mode = "in", user = null;
+
+/* ---------- ambient: cursor glow, dust, tilt ---------- */
+const cur = $("#cursor");
+addEventListener("pointermove", e => { cur.style.transform = `translate(${e.clientX}px,${e.clientY}px)`; });
+const cv = $("#dust"), cx = cv.getContext("2d"); let dots = [];
+function size(){ cv.width = innerWidth; cv.height = innerHeight; }
+size(); addEventListener("resize", size);
+for (let i = 0; i < 50; i++) dots.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.6+.4,v:Math.random()*.25+.05,p:Math.random()*6});
+(function tick(t){
+  cx.clearRect(0,0,cv.width,cv.height);
+  for (const d of dots){ d.y -= d.v; d.x += Math.sin(t/2000+d.p)*.2; if (d.y < -5){d.y = cv.height+5; d.x = Math.random()*cv.width}
+    cx.beginPath(); cx.arc(d.x,d.y,d.r,0,7); cx.fillStyle = `rgba(200,190,255,${.25+.25*Math.sin(t/900+d.p)})`; cx.fill(); }
+  requestAnimationFrame(tick);
+})(0);
+
+function tilt(el){
+  el.addEventListener("pointermove", e => {
+    const b = el.getBoundingClientRect(), x = (e.clientX-b.left)/b.width, y = (e.clientY-b.top)/b.height;
+    el.style.setProperty("--mx", x*100+"%"); el.style.setProperty("--my", y*100+"%");
+    el.style.transform = `perspective(800px) rotateX(${(.5-y)*8}deg) rotateY(${(x-.5)*10}deg) translateY(-4px)`;
+  });
+  el.addEventListener("pointerleave", () => el.style.transform = "");
+}
+// hero chips: gentle parallax on pointer
+$("#stack").addEventListener("pointermove", e => {
+  const b = e.currentTarget.getBoundingClientRect(), x = (e.clientX-b.left)/b.width-.5, y = (e.clientY-b.top)/b.height-.5;
+  document.querySelectorAll(".chip").forEach((c,i) => c.style.translate = `${x*(i+1)*14}px ${y*(i+1)*14}px`);
+});
+
+/* ---------- demo boards (replaced by Firestore in phase 2) ---------- */
+const boards = [
+  {t:"Best Studio Ghibli films",c:"Movies",by:"mira",s:"numbered",items:["Spirited Away","Totoro","Mononoke"]},
+  {t:"Coffee order tier list",c:"Food",by:"jun",s:"tier",items:["S","A","B"]},
+  {t:"Top lo-fi albums",c:"Music",by:"kai",s:"numbered",items:["Tycho","Bonobo","Nujabes"]},
+  {t:"Cozy games ranked",c:"Games",by:"ola",s:"tier",items:["S","A","C"]},
+  {t:"Night sky objects",c:"Science",by:"sol",s:"numbered",items:["Orion Nebula","Saturn","Andromeda"]},
+  {t:"Anime openings",c:"Anime",by:"rin",s:"tier",items:["S","S","B"]},
+];
+const cats = ["All", ...new Set(boards.map(b => b.c))];
+const tierCol = {S:"#ff9ad5",A:"#b9a7ff",B:"#6ee7f9",C:"#8be9b0"};
+let cat = "All";
+
+function renderHome(){
+  $("#filters").innerHTML = cats.map(c => `<button class="pill ${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("");
+  const list = boards.filter(b => cat==="All" || b.c===cat);
+  $("#grid").innerHTML = `<button class="card new" id="newCard"><span class="plus">+</span><span>Create a board</span></button>` +
+    list.map((b,i) => `<article class="card" tabindex="0">
+      <button class="like" aria-label="Like board" data-like>♥</button>
+      <span class="tag">${b.c} · ${b.s}</span><h3>${b.t}</h3><span class="by">by ${b.by}</span>
+      <div class="prev">${b.s==="tier"
+        ? b.items.map(l => `<div class="tier"><b style="background:${tierCol[l]}">${l}</b><i></i></div>`).join("")
+        : b.items.map((l,j) => `<div class="row"><span class="n">${j+1}</span>${l}<span class="l" style="width:${60-j*15}px"></span></div>`).join("")}
+      </div></article>`).join("");
+  document.querySelectorAll(".card").forEach(tilt);
+}
+$("#filters").addEventListener("click", e => { const c = e.target.dataset.cat; if (c){ cat = c; renderHome(); }});
+$("#grid").addEventListener("click", e => {
+  if (e.target.dataset.like !== undefined) return e.target.classList.toggle("on");
+  if (e.target.closest("#newCard")) toast("Board builder arrives in phase 2");
+});
+$("#newBtn").onclick = () => toast("Board builder arrives in phase 2");
+
+/* ---------- auth UI ---------- */
+const veil = $("#veil");
+const open = () => { veil.classList.add("show"); setTimeout(() => $("#email").focus(), 50); };
+const close = () => { veil.classList.remove("show"); $("#err").textContent = ""; };
+document.querySelectorAll("[data-open]").forEach(b => b.onclick = open);
+$("#close").onclick = close;
+veil.addEventListener("pointerdown", e => { if (e.target === veil) close(); });
+addEventListener("keydown", e => { if (e.key === "Escape") close(); if (e.key === "Enter" && veil.classList.contains("show")) $("#submit").click(); });
+if (DEMO) $("#demo").classList.remove("hide");
+
+document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => {
+  mode = b.dataset.tab;
+  document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x === b));
+  const up = mode === "up";
+  $("#name").classList.toggle("hide", !up);
+  $("#mTitle").textContent = up ? "Join Drift" : "Welcome back";
+  $("#mSub").textContent = up ? "Create an account to save your boards." : "Sign in to see your boards.";
+  $("#submit").textContent = up ? "Create account" : "Sign in";
+  $("#pass").autocomplete = up ? "new-password" : "current-password";
+  $("#err").textContent = "";
+});
+
+const msgs = {"auth/invalid-credential":"Email or password is incorrect.","auth/email-already-in-use":"That email already has an account. Try signing in.",
+  "auth/weak-password":"Use a password with at least 6 characters.","auth/invalid-email":"Enter a valid email address.","auth/popup-closed-by-user":"Google sign-in was closed before finishing."};
+const fail = e => { $("#err").textContent = msgs[e.code] || "Something went wrong. Try again."; };
+
+$("#submit").onclick = async () => {
+  const email = $("#email").value.trim(), pass = $("#pass").value, name = $("#name").value.trim();
+  if (!email || !pass) return $("#err").textContent = "Enter your email and password.";
+  if (DEMO) return setUser({displayName: name || email.split("@")[0], email});
+  try {
+    if (mode === "up"){ const c = await createUserWithEmailAndPassword(auth, email, pass); if (name) await updateProfile(c.user, {displayName: name}); setUser({...c.user, displayName: name || email.split("@")[0]}); }
+    else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) { fail(e); }
+};
+$("#google").onclick = async () => {
+  if (DEMO) return setUser({displayName:"Demo", email:"demo@drift.app"});
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { fail(e); }
+};
+$("#avatar").onclick = async () => { if (confirm("Sign out?")){ DEMO ? setUser(null) : await signOut(auth); } };
+
+function setUser(u){
+  user = u;
+  const on = !!u;
+  $("#landing").classList.toggle("hide", on); $("#home").classList.toggle("hide", !on);
+  $("#navOut").classList.toggle("hide", on); $("#navIn").classList.toggle("hide", !on);
+  if (on){
+    const n = u.displayName || u.email.split("@")[0];
+    $("#hello").textContent = `Hello, ${n.split(" ")[0]}`;
+    $("#avatar").innerHTML = u.photoURL ? `<img src="${u.photoURL}" alt="">` : n[0].toUpperCase();
+    close(); renderHome(); toast(`Signed in as ${n}`);
+  }
+}
+if (!DEMO) onAuthStateChanged(auth, u => { if (u) setUser(u); else if (user) setUser(null); });
+
+function toast(t){ const el = $("#toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2400); }
+</script>
+</body>
+</html>
