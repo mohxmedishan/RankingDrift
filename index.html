@@ -3,112 +3,151 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070618">
 <title>Drift – rank anything</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%23b9a7ff'/%3E%3C/svg%3E">
+<script>
+/* runs before first paint: decides the view so refresh never flashes the wrong page */
+(function(){var h=document.documentElement;
+try{if(localStorage.getItem("drift:u"))h.classList.add("in")}catch(e){}
+try{if(sessionStorage.getItem("drift:seen"))h.classList.add("again")}catch(e){}
+setTimeout(function(){h.classList.add("ready")},3500);})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;600&display=block" rel="stylesheet">
 <style>
 :root{
-  --void:#070618; --deep:#0d0b2b; --glass:rgba(255,255,255,.05); --line:rgba(190,175,255,.16);
-  --text:#eeeaff; --dim:#9a94c4; --lilac:#b9a7ff; --aqua:#6ee7f9; --rose:#ff9ad5;
-  --r:22px;
+  --void:#070618; --glass:rgba(255,255,255,.045); --line:rgba(190,175,255,.14);
+  --text:#eeeaff; --dim:#9a94c4; --lilac:#b9a7ff; --aqua:#6ee7f9; --rose:#ff9ad5; --r:22px;
 }
 *{box-sizing:border-box;margin:0}
-html{scroll-behavior:smooth}
 body{background:var(--void);color:var(--text);font:300 15px/1.6 Sora,system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
-h1,h2,h3,.serif{font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:-.01em}
+h1,h2,h3{font-family:"Instrument Serif",serif;font-weight:400;letter-spacing:-.01em}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 :focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
 
-/* ambient layer */
+/* view switching (class set before paint) */
+html:not(.in) #home,html:not(.in) #navIn{display:none}
+html.in #landing,html.in #navOut{display:none}
+
+/* reveal: hidden until fonts + auth are ready */
+.app{opacity:0;position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px 90px}
+html.ready .app{opacity:1;transition:opacity .3s ease}
+html.ready:not(.again) .app{transition:none}
+@keyframes rise-in{from{opacity:0;transform:translateY(16px)}}
+.enter [data-rise],.enter .card{animation:rise-in .9s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:calc(var(--i,0)*80ms)}
+
+/* ambient */
 #sky{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:float 18s ease-in-out infinite}
-.o1{width:46vmax;height:46vmax;background:#4b2fd6;top:-18vmax;left:-12vmax}
-.o2{width:38vmax;height:38vmax;background:#0e8fb0;bottom:-16vmax;right:-10vmax;animation-delay:-6s;opacity:.38}
-.o3{width:26vmax;height:26vmax;background:#c2399a;top:35%;left:55%;animation-delay:-11s;opacity:.25}
-@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vmax,-5vmax) scale(1.1)}}
-#cursor{position:fixed;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;z-index:0;pointer-events:none;
-  background:radial-gradient(circle,rgba(150,130,255,.16),transparent 65%);transition:transform .25s ease-out}
+.orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.2;animation:float 22s ease-in-out infinite}
+.o1{width:46vmax;height:46vmax;background:#4b2fd6;top:-20vmax;left:-14vmax}
+.o2{width:38vmax;height:38vmax;background:#0e8fb0;bottom:-18vmax;right:-12vmax;animation-delay:-7s;opacity:.15}
+.o3{width:24vmax;height:24vmax;background:#9b3a8c;top:40%;left:58%;animation-delay:-12s;opacity:.07}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(3vmax,-4vmax) scale(1.07)}}
 canvas#dust{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-/* layout */
-.app{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px 90px}
 nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
 .logo{font-family:"Instrument Serif";font-size:30px;display:flex;align-items:center;gap:10px}
-.logo i{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--lilac) 40%,var(--aqua));box-shadow:0 0 18px var(--lilac),0 0 42px rgba(110,231,249,.5);animation:pulse 4s ease-in-out infinite}
-@keyframes pulse{50%{transform:translateY(-3px);box-shadow:0 0 26px var(--lilac),0 0 60px rgba(110,231,249,.7)}}
-.btn{padding:11px 22px;border-radius:99px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);transition:.3s}
-.btn:hover{border-color:var(--lilac);box-shadow:0 0 24px rgba(185,167,255,.3);transform:translateY(-2px)}
-.btn.glow{background:linear-gradient(120deg,#7c5cff,#3ec6ea);border:0;font-weight:600;color:#07061a;box-shadow:0 8px 30px rgba(124,92,255,.4)}
-.btn.glow:hover{box-shadow:0 10px 44px rgba(110,231,249,.55)}
+.logo i{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--lilac) 45%,#8fb8f5);box-shadow:0 0 14px rgba(185,167,255,.55);animation:bob 5s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-3px)}}
+
+.btn{padding:11px 22px;border-radius:99px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);transition:transform .25s,border-color .25s,box-shadow .25s}
+.btn:hover{border-color:rgba(185,167,255,.55);box-shadow:0 0 18px rgba(185,167,255,.14);transform:scale(1.04)}
+.btn:active{transform:scale(.97)}
+.btn.glow{background:linear-gradient(120deg,#8a73f0,#6bb9dc);border:0;font-weight:600;color:#07061a;box-shadow:0 6px 22px rgba(124,92,255,.2)}
+.btn.glow:hover{box-shadow:0 8px 28px rgba(110,170,240,.3)}
+
+/* account menu */
 .me{display:flex;align-items:center;gap:12px}
-.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--lilac),var(--rose));display:grid;place-items:center;color:#07061a;font-weight:600;overflow:hidden;box-shadow:0 0 18px rgba(255,154,213,.4)}
-.avatar img{width:100%;height:100%;object-fit:cover}
+.menuwrap{position:relative}
+.avatar{width:42px;height:42px;padding:0;border-radius:50%;overflow:hidden;display:block;position:relative;
+  background:linear-gradient(135deg,#a794f5,#e79fd0);color:#07061a;font-weight:600;font-size:16px;
+  box-shadow:0 0 0 2px rgba(7,6,24,1),0 0 0 3px var(--line);transition:transform .25s,box-shadow .25s}
+.avatar:hover,.avatar[aria-expanded=true]{transform:scale(1.07);box-shadow:0 0 0 2px var(--void),0 0 0 3px rgba(185,167,255,.6)}
+.avatar:active{transform:scale(.96)}
+.avatar span{position:absolute;inset:0;display:grid;place-items:center}
+.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.menu{position:absolute;right:0;top:calc(100% + 12px);width:230px;padding:8px;border-radius:18px;z-index:15;
+  border:1px solid var(--line);background:rgba(16,13,48,.92);backdrop-filter:blur(18px);box-shadow:0 18px 50px rgba(0,0,0,.45);
+  transform-origin:top right;opacity:0;transform:translateY(-8px) scale(.96);visibility:hidden;pointer-events:none;
+  transition:opacity .22s,transform .22s,visibility 0s .22s}
+.menu.open{opacity:1;transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}
+.who{padding:10px 12px 12px;border-bottom:1px solid var(--line);margin-bottom:6px;display:flex;flex-direction:column;overflow:hidden}
+.who b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who span{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu button{width:100%;text-align:left;padding:10px 12px;border-radius:12px;color:#ffb3c6;transition:background .2s}
+.menu button:hover{background:rgba(255,255,255,.07)}
 
 /* hero */
 .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;min-height:68vh;padding:30px 0}
 .hero h1{font-size:clamp(46px,7.4vw,92px);line-height:.98}
-.hero h1 em{color:var(--lilac);text-shadow:0 0 40px rgba(185,167,255,.55)}
+.hero h1 em{color:var(--lilac);text-shadow:0 0 28px rgba(185,167,255,.28)}
 .hero p{color:var(--dim);max-width:44ch;margin:22px 0 32px;font-size:17px}
-.stack{position:relative;height:420px;perspective:900px}
+.stack{position:relative;height:420px}
 .chip{position:absolute;display:flex;align-items:center;gap:14px;padding:16px 22px;border-radius:18px;border:1px solid var(--line);
-  background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.02));backdrop-filter:blur(14px);
-  box-shadow:0 20px 50px rgba(0,0,0,.4);animation:float 9s ease-in-out infinite;transition:.4s;cursor:grab}
-.chip:hover{border-color:var(--aqua);box-shadow:0 0 40px rgba(110,231,249,.35)}
-.chip b{font:400 30px "Instrument Serif";color:var(--aqua);text-shadow:0 0 16px var(--aqua)}
+  background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.015));backdrop-filter:blur(14px);
+  box-shadow:0 16px 40px rgba(0,0,0,.35);animation:float 11s ease-in-out infinite;transition:border-color .3s}
+.chip:hover{border-color:rgba(110,231,249,.45)}
+.chip b{font:400 30px "Instrument Serif";color:var(--aqua)}
 
 /* home */
 .greet h2{font-size:clamp(34px,5vw,56px)}
 .greet p{color:var(--dim)}
-.bar{display:flex;gap:10px;flex-wrap:wrap;margin:28px 0 24px;align-items:center}
-.pill{padding:8px 18px;border-radius:99px;border:1px solid var(--line);color:var(--dim);transition:.25s}
-.pill:hover{color:var(--text);border-color:var(--lilac)}
-.pill.on{color:#07061a;background:var(--lilac);border-color:var(--lilac);box-shadow:0 0 22px rgba(185,167,255,.5)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:28px 0 24px}
+.pill{padding:8px 18px;border-radius:99px;border:1px solid var(--line);color:var(--dim);transition:transform .2s,color .25s,background .25s,border-color .25s}
+.pill:hover{color:var(--text);border-color:rgba(185,167,255,.5);transform:scale(1.05)}
+.pill:active{transform:scale(.95)}
+.pill.on{color:#07061a;background:var(--lilac);border-color:var(--lilac)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
-.card{position:relative;border-radius:var(--r);border:1px solid var(--line);padding:20px;min-height:250px;display:flex;flex-direction:column;
-  background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015));backdrop-filter:blur(14px);
-  transform-style:preserve-3d;transition:transform .2s ease-out,border-color .3s,box-shadow .3s;text-align:left;overflow:hidden}
-.card::before{content:"";position:absolute;inset:0;background:radial-gradient(260px circle at var(--mx,50%) var(--my,0%),rgba(150,130,255,.22),transparent 60%);opacity:0;transition:.3s}
-.card:hover{border-color:rgba(185,167,255,.5);box-shadow:0 20px 60px rgba(90,60,220,.28)}
+.card{position:relative;border-radius:var(--r);border:1px solid var(--line);padding:20px;min-height:250px;display:flex;flex-direction:column;cursor:pointer;
+  background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.012));backdrop-filter:blur(14px);
+  transition:transform .22s ease-out,border-color .3s,box-shadow .3s;text-align:left;overflow:hidden}
+.card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(240px circle at var(--mx,50%) var(--my,0%),rgba(150,130,255,.1),transparent 60%);opacity:0;transition:opacity .3s}
+.card:hover{border-color:rgba(185,167,255,.38);box-shadow:0 14px 40px rgba(60,40,160,.18)}
 .card:hover::before{opacity:1}
 .card>*{position:relative}
-.tag{font-size:12px;color:var(--aqua)}
+.tag{font-size:12px;color:var(--aqua);opacity:.85}
 .card h3{font-size:26px;line-height:1.1;margin:6px 0 4px}
 .card .by{font-size:12px;color:var(--dim)}
 .prev{margin-top:auto;display:grid;gap:6px;padding-top:16px}
 .row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);height:22px}
-.row span.n{width:18px;color:var(--lilac)}
-.row span.l{height:6px;border-radius:9px;background:linear-gradient(90deg,var(--lilac),transparent)}
+.row .n{width:18px;color:var(--lilac)}
+.row .l{height:5px;border-radius:9px;background:linear-gradient(90deg,var(--lilac),transparent);transform-origin:left;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.card:hover .row .l{transform:scaleX(1.5)}
 .tier{display:flex;gap:6px;align-items:center;height:22px}
-.tier b{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;color:#07061a;font-weight:600}
-.tier i{flex:1;height:6px;border-radius:9px;background:rgba(255,255,255,.1)}
-.like{position:absolute;top:16px;right:16px;font-size:18px;transition:.25s;filter:grayscale(1) opacity(.6)}
-.like.on{filter:none;transform:scale(1.2);text-shadow:0 0 16px var(--rose)}
+.tier b{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;color:#07061a;font-weight:600;opacity:.9}
+.tier i{flex:1;height:5px;border-radius:9px;background:rgba(255,255,255,.08);transform-origin:left;transition:background .4s}
+.card:hover .tier i{background:rgba(185,167,255,.25)}
 .new{border-style:dashed;align-items:center;justify-content:center;gap:12px;color:var(--dim)}
-.new .plus{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:30px;color:var(--aqua);border:1px solid var(--aqua);box-shadow:0 0 30px rgba(110,231,249,.3),inset 0 0 20px rgba(110,231,249,.15);animation:pulse 4s ease-in-out infinite}
+.new .plus{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:28px;color:var(--aqua);border:1px solid rgba(110,231,249,.5);transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+.new:hover .plus{transform:rotate(90deg) scale(1.08)}
 
 /* modal */
 .veil{position:fixed;inset:0;z-index:20;background:rgba(5,4,18,.7);backdrop-filter:blur(8px);display:none;place-items:center;padding:20px}
 .veil.show{display:grid}
-.modal{width:100%;max-width:410px;border-radius:28px;padding:34px 30px;border:1px solid var(--line);
-  background:linear-gradient(160deg,rgba(40,32,100,.55),rgba(12,10,40,.9));box-shadow:0 0 90px rgba(124,92,255,.3);animation:rise .5s cubic-bezier(.2,.9,.3,1.2)}
-@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.96)}}
+.modal{position:relative;width:100%;max-width:410px;border-radius:28px;padding:34px 30px;border:1px solid var(--line);
+  background:linear-gradient(160deg,rgba(34,28,88,.6),rgba(12,10,40,.94));box-shadow:0 0 60px rgba(124,92,255,.14);animation:pop .45s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.96)}}
 .modal h2{font-size:40px;text-align:center}
 .modal .sub{text-align:center;color:var(--dim);margin-bottom:22px}
 .tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.05);border-radius:99px;padding:4px;margin-bottom:18px}
-.tabs button{padding:9px;border-radius:99px;color:var(--dim);transition:.3s}
-.tabs button.on{background:rgba(185,167,255,.22);color:var(--text);box-shadow:0 0 18px rgba(185,167,255,.3)}
-input{width:100%;padding:14px 18px;margin-bottom:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font:inherit;transition:.3s}
-input:focus{outline:0;border-color:var(--aqua);box-shadow:0 0 22px rgba(110,231,249,.25)}
+.tabs button{padding:9px;border-radius:99px;color:var(--dim);transition:background .3s,color .3s}
+.tabs button.on{background:rgba(185,167,255,.2);color:var(--text)}
+input{width:100%;padding:14px 18px;margin-bottom:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);font:inherit;transition:border-color .3s,box-shadow .3s}
+input:focus{outline:0;border-color:rgba(110,231,249,.7);box-shadow:0 0 14px rgba(110,231,249,.12)}
 .modal .btn{width:100%;margin-top:4px}
 .or{text-align:center;color:var(--dim);font-size:12px;margin:14px 0}
 .err{color:#ff8fa8;font-size:13px;min-height:20px;margin-bottom:6px}
-.x{position:absolute;top:14px;right:18px;font-size:22px;color:var(--dim)}
-.toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,40px);opacity:0;z-index:30;padding:12px 22px;border-radius:99px;
-  background:rgba(20,16,60,.9);border:1px solid var(--lilac);box-shadow:0 0 30px rgba(185,167,255,.35);transition:.4s;pointer-events:none}
-.toast.show{opacity:1;transform:translate(-50%,0)}
+.x{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;font-size:22px;color:var(--dim);transition:transform .25s,color .25s}
+.x:hover{color:var(--text);transform:scale(1.12) rotate(90deg)}
 .hide{display:none!important}
 .demo{font-size:11px;color:var(--rose);text-align:center;margin-top:12px}
+.toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,40px);opacity:0;z-index:30;padding:12px 22px;border-radius:99px;
+  background:rgba(20,16,60,.92);border:1px solid rgba(185,167,255,.4);transition:.4s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.ver{position:fixed;right:16px;bottom:14px;z-index:25;font-size:11px;color:var(--dim);padding:5px 12px;border-radius:99px;
+  border:1px solid var(--line);background:rgba(10,8,34,.6);backdrop-filter:blur(8px);pointer-events:none;user-select:none;opacity:.8}
 
 @media(max-width:820px){.hero{grid-template-columns:1fr;min-height:0}.stack{height:340px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -116,27 +155,31 @@ input:focus{outline:0;border-color:var(--aqua);box-shadow:0 0 22px rgba(110,231,
 </head>
 <body>
 <div id="sky"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
-<div id="cursor"></div>
 <canvas id="dust"></canvas>
 
-<div class="app">
-  <nav>
+<div class="app" id="app">
+  <nav data-rise>
     <div class="logo"><i></i>Drift</div>
     <div id="navOut"><button class="btn" data-open>Sign in</button></div>
-    <div id="navIn" class="me hide">
+    <div id="navIn" class="me">
       <button class="btn glow" id="newBtn">New board</button>
-      <button class="avatar" id="avatar" title="Sign out" aria-label="Account"></button>
+      <div class="menuwrap">
+        <button class="avatar" id="avatar" aria-label="Account menu" aria-haspopup="menu" aria-expanded="false"></button>
+        <div class="menu" id="menu" role="menu">
+          <div class="who"><b id="mName"></b><span id="mMail"></span></div>
+          <button role="menuitem" id="signout">Sign out</button>
+        </div>
+      </div>
     </div>
   </nav>
 
-  <!-- signed out -->
   <section id="landing" class="hero">
     <div>
-      <h1>Rank <em>everything</em> you love.</h1>
-      <p>Build boards for anything. Numbered lists, tier lists, and more. Save them to your account and share them with the world.</p>
-      <button class="btn glow" data-open>Start ranking</button>
+      <h1 data-rise style="--i:1">Rank <em>everything</em> you love.</h1>
+      <p data-rise style="--i:2">Build boards for anything. Numbered lists, tier lists, and more. Save them to your account and share them with the world.</p>
+      <button class="btn glow" data-open data-rise style="--i:3">Start ranking</button>
     </div>
-    <div class="stack" id="stack">
+    <div class="stack" id="stack" data-rise style="--i:3">
       <div class="chip" style="top:6%;left:8%"><b>S</b>Midnight snacks</div>
       <div class="chip" style="top:30%;right:0;animation-delay:-3s"><b>#1</b>Rainy-day albums</div>
       <div class="chip" style="top:56%;left:0;animation-delay:-6s"><b>A</b>Open-world games</div>
@@ -144,16 +187,15 @@ input:focus{outline:0;border-color:var(--aqua);box-shadow:0 0 22px rgba(110,231,
     </div>
   </section>
 
-  <!-- signed in -->
-  <section id="home" class="hide">
-    <div class="greet"><h2 id="hello"></h2><p>Pick up where you left off or find something to rank.</p></div>
-    <div class="bar" id="filters"></div>
+  <section id="home">
+    <div class="greet" data-rise style="--i:1"><h2 id="hello"></h2><p>Pick up where you left off or find something to rank.</p></div>
+    <div class="bar" id="filters" data-rise style="--i:2"></div>
     <div class="grid" id="grid"></div>
   </section>
 </div>
 
 <div class="veil" id="veil">
-  <div class="modal" style="position:relative" role="dialog" aria-modal="true" aria-label="Sign in">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Sign in">
     <button class="x" id="close" aria-label="Close">×</button>
     <h2 id="mTitle">Welcome back</h2>
     <p class="sub" id="mSub">Sign in to see your boards.</p>
@@ -169,13 +211,13 @@ input:focus{outline:0;border-color:var(--aqua);box-shadow:0 0 22px rgba(110,231,
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="ver">Alpha v0.1</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   signInWithPopup, GoogleAuthProvider, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-/* 1. PASTE YOUR FIREBASE CONFIG HERE */
 const firebaseConfig = {
   apiKey: "AIzaSyBSuRiNrg99Da9kdJH-F3ytJN5qDZmRctk",
   authDomain: "rankingdrift.firebaseapp.com",
@@ -185,38 +227,50 @@ const firebaseConfig = {
 
 const DEMO = firebaseConfig.apiKey === "YOUR_API_KEY";
 const $ = s => document.querySelector(s);
+const root = document.documentElement;
+const again = root.classList.contains("again");
 const auth = DEMO ? null : getAuth(initializeApp(firebaseConfig));
-let mode = "in", user = null;
+let mode = "in", user = null, fresh = false, pendingName = "";
+history.scrollRestoration = "manual";
 
-/* ---------- ambient: cursor glow, dust, tilt ---------- */
-const cur = $("#cursor");
-addEventListener("pointermove", e => { cur.style.transform = `translate(${e.clientX}px,${e.clientY}px)`; });
-const cv = $("#dust"), cx = cv.getContext("2d"); let dots = [];
-function size(){ cv.width = innerWidth; cv.height = innerHeight; }
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch(e){ return null } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k) }catch(e){} }
+};
+
+/* ---------- ambient dust ---------- */
+const cv = $("#dust"), cx = cv.getContext("2d");
+const size = () => { cv.width = innerWidth; cv.height = innerHeight; };
 size(); addEventListener("resize", size);
-for (let i = 0; i < 50; i++) dots.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.6+.4,v:Math.random()*.25+.05,p:Math.random()*6});
+const dots = Array.from({length:26}, () => ({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.4+.4,v:Math.random()*.2+.04,p:Math.random()*6}));
 (function tick(t){
   cx.clearRect(0,0,cv.width,cv.height);
-  for (const d of dots){ d.y -= d.v; d.x += Math.sin(t/2000+d.p)*.2; if (d.y < -5){d.y = cv.height+5; d.x = Math.random()*cv.width}
-    cx.beginPath(); cx.arc(d.x,d.y,d.r,0,7); cx.fillStyle = `rgba(200,190,255,${.25+.25*Math.sin(t/900+d.p)})`; cx.fill(); }
+  for (const d of dots){
+    d.y -= d.v; d.x += Math.sin(t/2500+d.p)*.15;
+    if (d.y < -5){ d.y = cv.height+5; d.x = Math.random()*cv.width }
+    cx.beginPath(); cx.arc(d.x,d.y,d.r,0,7); cx.fillStyle = `rgba(200,190,255,${.1+.1*Math.sin(t/1100+d.p)})`; cx.fill();
+  }
   requestAnimationFrame(tick);
 })(0);
 
+/* card tilt: transform is on the card itself, so the hitbox moves with it */
 function tilt(el){
   el.addEventListener("pointermove", e => {
+    if (e.pointerType === "touch") return;
     const b = el.getBoundingClientRect(), x = (e.clientX-b.left)/b.width, y = (e.clientY-b.top)/b.height;
     el.style.setProperty("--mx", x*100+"%"); el.style.setProperty("--my", y*100+"%");
-    el.style.transform = `perspective(800px) rotateX(${(.5-y)*8}deg) rotateY(${(x-.5)*10}deg) translateY(-4px)`;
+    el.style.transform = `perspective(900px) rotateX(${(.5-y)*5}deg) rotateY(${(x-.5)*6}deg) scale(1.02)`;
   });
   el.addEventListener("pointerleave", () => el.style.transform = "");
 }
-// hero chips: gentle parallax on pointer
 $("#stack").addEventListener("pointermove", e => {
   const b = e.currentTarget.getBoundingClientRect(), x = (e.clientX-b.left)/b.width-.5, y = (e.clientY-b.top)/b.height-.5;
-  document.querySelectorAll(".chip").forEach((c,i) => c.style.translate = `${x*(i+1)*14}px ${y*(i+1)*14}px`);
+  document.querySelectorAll(".chip").forEach((c,i) => c.style.translate = `${x*(i+1)*10}px ${y*(i+1)*10}px`);
 });
+$("#stack").addEventListener("pointerleave", () => document.querySelectorAll(".chip").forEach(c => c.style.translate = ""));
 
-/* ---------- demo boards (replaced by Firestore in phase 2) ---------- */
+/* ---------- demo boards (Firestore in phase 2) ---------- */
 const boards = [
   {t:"Best Studio Ghibli films",c:"Movies",by:"mira",s:"numbered",items:["Spirited Away","Totoro","Mononoke"]},
   {t:"Coffee order tier list",c:"Food",by:"jun",s:"tier",items:["S","A","B"]},
@@ -226,37 +280,50 @@ const boards = [
   {t:"Anime openings",c:"Anime",by:"rin",s:"tier",items:["S","S","B"]},
 ];
 const cats = ["All", ...new Set(boards.map(b => b.c))];
-const tierCol = {S:"#ff9ad5",A:"#b9a7ff",B:"#6ee7f9",C:"#8be9b0"};
-let cat = "All";
+const tierCol = {S:"#e7a0cb",A:"#b9a7ff",B:"#7fdcec",C:"#98e0b4"};
+let cat = store.get("drift:cat") || "All";
+if (!cats.includes(cat)) cat = "All";
 
 function renderHome(){
   $("#filters").innerHTML = cats.map(c => `<button class="pill ${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("");
   const list = boards.filter(b => cat==="All" || b.c===cat);
-  $("#grid").innerHTML = `<button class="card new" id="newCard"><span class="plus">+</span><span>Create a board</span></button>` +
-    list.map((b,i) => `<article class="card" tabindex="0">
-      <button class="like" aria-label="Like board" data-like>♥</button>
+  $("#grid").innerHTML = `<button class="card new" id="newCard" style="--i:3"><span class="plus">+</span><span>Create a board</span></button>` +
+    list.map((b,i) => `<article class="card" tabindex="0" style="--i:${i+4}">
       <span class="tag">${b.c} · ${b.s}</span><h3>${b.t}</h3><span class="by">by ${b.by}</span>
       <div class="prev">${b.s==="tier"
         ? b.items.map(l => `<div class="tier"><b style="background:${tierCol[l]}">${l}</b><i></i></div>`).join("")
-        : b.items.map((l,j) => `<div class="row"><span class="n">${j+1}</span>${l}<span class="l" style="width:${60-j*15}px"></span></div>`).join("")}
+        : b.items.map((l,j) => `<div class="row"><span class="n">${j+1}</span>${l}<span class="l" style="width:${50-j*12}px"></span></div>`).join("")}
       </div></article>`).join("");
   document.querySelectorAll(".card").forEach(tilt);
 }
-$("#filters").addEventListener("click", e => { const c = e.target.dataset.cat; if (c){ cat = c; renderHome(); }});
+$("#filters").addEventListener("click", e => {
+  const c = e.target.dataset.cat; if (!c) return;
+  cat = c; store.set("drift:cat", c); renderHome();
+});
 $("#grid").addEventListener("click", e => {
-  if (e.target.dataset.like !== undefined) return e.target.classList.toggle("on");
   if (e.target.closest("#newCard")) toast("Board builder arrives in phase 2");
+  else if (e.target.closest(".card")) toast("Board pages arrive in phase 2");
 });
 $("#newBtn").onclick = () => toast("Board builder arrives in phase 2");
 
-/* ---------- auth UI ---------- */
+/* ---------- account menu ---------- */
+const menu = $("#menu"), av = $("#avatar");
+const setMenu = on => { menu.classList.toggle("open", on); av.setAttribute("aria-expanded", on); };
+av.onclick = e => { e.stopPropagation(); setMenu(!menu.classList.contains("open")); };
+addEventListener("pointerdown", e => { if (!e.target.closest(".menuwrap")) setMenu(false); });
+$("#signout").onclick = async () => { setMenu(false); DEMO ? applyUser(null) : await signOut(auth); };
+
+/* ---------- sign-in modal ---------- */
 const veil = $("#veil");
 const open = () => { veil.classList.add("show"); setTimeout(() => $("#email").focus(), 50); };
 const close = () => { veil.classList.remove("show"); $("#err").textContent = ""; };
 document.querySelectorAll("[data-open]").forEach(b => b.onclick = open);
 $("#close").onclick = close;
 veil.addEventListener("pointerdown", e => { if (e.target === veil) close(); });
-addEventListener("keydown", e => { if (e.key === "Escape") close(); if (e.key === "Enter" && veil.classList.contains("show")) $("#submit").click(); });
+addEventListener("keydown", e => {
+  if (e.key === "Escape"){ close(); setMenu(false); }
+  if (e.key === "Enter" && e.target.tagName === "INPUT" && veil.classList.contains("show")) $("#submit").click();
+});
 if (DEMO) $("#demo").classList.remove("hide");
 
 document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => {
@@ -272,37 +339,85 @@ document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => {
 });
 
 const msgs = {"auth/invalid-credential":"Email or password is incorrect.","auth/email-already-in-use":"That email already has an account. Try signing in.",
-  "auth/weak-password":"Use a password with at least 6 characters.","auth/invalid-email":"Enter a valid email address.","auth/popup-closed-by-user":"Google sign-in was closed before finishing."};
-const fail = e => { $("#err").textContent = msgs[e.code] || "Something went wrong. Try again."; };
+  "auth/weak-password":"Use a password with at least 6 characters.","auth/invalid-email":"Enter a valid email address.",
+  "auth/popup-closed-by-user":"Google sign-in was closed before finishing.","auth/too-many-requests":"Too many attempts. Wait a moment and try again."};
+const fail = e => { fresh = false; $("#err").textContent = msgs[e.code] || "Something went wrong. Try again."; };
 
 $("#submit").onclick = async () => {
   const email = $("#email").value.trim(), pass = $("#pass").value, name = $("#name").value.trim();
   if (!email || !pass) return $("#err").textContent = "Enter your email and password.";
-  if (DEMO) return setUser({displayName: name || email.split("@")[0], email});
+  fresh = true;
+  if (DEMO){ applyUser({name: name || email.split("@")[0], email}); return; }
   try {
-    if (mode === "up"){ const c = await createUserWithEmailAndPassword(auth, email, pass); if (name) await updateProfile(c.user, {displayName: name}); setUser({...c.user, displayName: name || email.split("@")[0]}); }
-    else await signInWithEmailAndPassword(auth, email, pass);
-  } catch (e) { fail(e); }
+    if (mode === "up"){
+      pendingName = name;
+      const c = await createUserWithEmailAndPassword(auth, email, pass);
+      if (name) await updateProfile(c.user, {displayName: name});
+    } else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) { pendingName = ""; fail(e); }
 };
 $("#google").onclick = async () => {
-  if (DEMO) return setUser({displayName:"Demo", email:"demo@drift.app"});
+  fresh = true;
+  if (DEMO){ applyUser({name:"Demo", email:"demo@drift.app"}); return; }
   try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { fail(e); }
 };
-$("#avatar").onclick = async () => { if (confirm("Sign out?")){ DEMO ? setUser(null) : await signOut(auth); } };
 
-function setUser(u){
-  user = u;
-  const on = !!u;
-  $("#landing").classList.toggle("hide", on); $("#home").classList.toggle("hide", !on);
-  $("#navOut").classList.toggle("hide", on); $("#navIn").classList.toggle("hide", !on);
-  if (on){
-    const n = u.displayName || u.email.split("@")[0];
-    $("#hello").textContent = `Hello, ${n.split(" ")[0]}`;
-    $("#avatar").innerHTML = u.photoURL ? `<img src="${u.photoURL}" alt="">` : n[0].toUpperCase();
-    close(); renderHome(); toast(`Signed in as ${n}`);
+/* ---------- user state ---------- */
+function playEnter(el){ el.classList.add("enter"); setTimeout(() => el.classList.remove("enter"), 2400); }
+
+function fillAvatar(u){
+  const name = u.name || "?";
+  av.textContent = "";
+  const s = document.createElement("span"); s.textContent = name[0].toUpperCase(); av.append(s);
+  if (u.photo){
+    const i = new Image(); i.alt = ""; i.referrerPolicy = "no-referrer";
+    i.onload = () => av.append(i); i.src = u.photo;
   }
 }
-if (!DEMO) onAuthStateChanged(auth, u => { if (u) setUser(u); else if (user) setUser(null); });
+
+function applyUser(u){
+  user = u;
+  const wasIn = root.classList.contains("in");
+  root.classList.toggle("in", !!u);
+  if (u){
+    store.set("drift:u", u);
+    $("#hello").textContent = `Hello, ${u.name.split(" ")[0]}`;
+    $("#mName").textContent = u.name; $("#mMail").textContent = u.email || "";
+    fillAvatar(u); renderHome();
+    if (fresh){ close(); scrollTo(0,0); playEnter($("#home")); toast(`Signed in as ${u.name}`); }
+  } else {
+    store.del("drift:u"); setMenu(false);
+    if (wasIn){ scrollTo(0,0); playEnter($("#landing")); toast("Signed out"); }
+    for (const id of ["email","pass","name"]) $("#"+id).value = "";
+  }
+  fresh = false;
+}
+const mapUser = u => ({name: u.displayName || pendingName || (u.email || "you").split("@")[0], email: u.email || "", photo: u.photoURL || ""});
+
+/* ---------- boot: render from cache, then reveal once fonts + auth are ready ---------- */
+const cached = store.get("drift:u");
+if (cached) applyUser(cached);
+
+let authDone; const authReady = new Promise(r => authDone = r);
+if (DEMO) authDone();
+else onAuthStateChanged(auth, u => { u ? applyUser(mapUser(u)) : (user || root.classList.contains("in")) && applyUser(null); authDone(); });
+
+const fontsReady = Promise.all([
+  document.fonts.load('1em "Instrument Serif"'), document.fonts.load('italic 1em "Instrument Serif"'),
+  document.fonts.load('300 1em Sora'), document.fonts.load('600 1em Sora')
+]).catch(() => {});
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+Promise.race([Promise.all([fontsReady, authReady]), wait(2500)]).then(() => {
+  scrollTo(0, +sessionStorage.getItem("drift:y") || 0);
+  if (!again) $("#app").classList.add("enter");
+  requestAnimationFrame(() => {
+    root.classList.add("ready");
+    try { sessionStorage.setItem("drift:seen", "1"); } catch(e){}
+    if (!again) setTimeout(() => $("#app").classList.remove("enter"), 2400);
+  });
+});
+addEventListener("pagehide", () => { try { sessionStorage.setItem("drift:y", scrollY) } catch(e){} });
 
 function toast(t){ const el = $("#toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2400); }
 </script>
